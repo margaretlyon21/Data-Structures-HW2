@@ -1,164 +1,101 @@
 #include <iostream>
-#include <random>
+
+#include "Wheel.h"
+#include "Player.h"
+
 using namespace std;
 
-class Wheel{
-    private:
-        int slots;
-    public:
-        //function to spin the roullete wheel with variable slot nuumber
-        int spinWheel(){ 
-            int result = rand() % slots + 1;
-            return result;
-        }
-        // wheel constructor
-        Wheel(int slots) : slots(slots) {}
-};
+int main()
+{
+    bool isPlaying = true;
 
-class Player{
-    private:
-        int money;
-        //instance of wheel class
-        Wheel ourWheel;
-    public:
-        //getter and setter for money
-        int getMoney(){
-            return money;
-        }
-        void setMoney(int dollars){
-            money += dollars;
-        }
-        // function to spin the users wheel 
-        int spinOurWheel(){
-            return ourWheel.spinWheel();
-        }
-        //player constructor
-        Player(int money, int slots) : money(money), ourWheel(slots) {}
-};
-int main(){
-    int slots, startingCash;
-    bool correctSlots = false;
-    cout << "Welcome to Roullete! \nEnter the amount of money you would like to play with. \n";
-    cin >> startingCash;
+    string inText;
 
-    //Gets the number of slots in the wheel, checks if it is valid
-    while (!correctSlots){ 
-    if (slots > 20 | slots < 6){
-        cout << "Enter the number of slots on the wheel (min 6, max 20): \n";
-        cin >> slots;
-        if (slots > 20 | slots < 6){
-        cout << "Invalid number of slots for the wheel. Try again!\n";
-        }
-        else{
-            correctSlots = true;
-        }
+    cout << "Hi, welcome to this wheel game thing." << endl;
+
+    cout << "How much money do you want to use to play this session? ";
+    int startingMoney;
+    cin >> startingMoney;
+    while (startingMoney <= 0)
+    {
+        cout << "You can't bring nothing!" << endl;
+        cout << "How much money do you want to use to play this session? ";
+        cin >> startingMoney;
     }
+
+    cout << "How much values do you want to be on the wheels (min: 6, max: 20)? ";
+    int wheelValue;
+    cin >> wheelValue;
+    while (wheelValue < 6 || wheelValue > 20)
+    {
+        cout << "Invalid amount!" << endl;
+        cout << "How much values do you want to be on the wheels (min: 6, max: 20)? ";
+        cin >> wheelValue;
     }
-    //starts a new game, calls constructor for the player
-    cout << "******************** Starting Game *********************\n";
-    Player user(startingCash, slots);
-    Player house(startingCash, slots);
 
-    //loops while the player still has money
-    while (user.getMoney() > 0){
-        int bet;
-        cout << "Current money: $" << user.getMoney() << "\n";
-        cout << "Enter bet: ";
-        cin >> bet;
+    Player p = Player(startingMoney, wheelValue);
+    Wheel house = Wheel(wheelValue);
 
-        //checks if entered bet is valid 
-        if (bet > user.getMoney()){
-            cout << "You don't have enough money for that!";
-            continue;
+    int input;
+    string inText;
+    while (isPlaying)
+    {
+        cout << "You currently have " << p.getMoney() << "$" << endl;
+
+        cout << "How much do you wanna bet? ";
+        int betAmount;
+        cin >> betAmount;
+        while (betAmount < 0 || betAmount > p.getMoney())
+        {
+            cout << "Invalid amount!" << endl;
+            cout << "How much do you wanna bet? ";
+            cin >> betAmount;
         }
 
-        //spins the wheel for the user and the house
-        int userSpin = user.spinOurWheel();
-        int houseSpin1 = house.spinOurWheel();
-        int houseSpin2 = house.spinOurWheel();
-        cout << "Spin Result: " << userSpin << endl;
+        int playerRoll = p.release();
 
-        //Allows the user to change wager, checks if entry is valid
-        char choice;
-        bool correctChoice = false;
-        while (!correctChoice){
-            cout << "Do you want to double (d), halve (h), or keep (k) the current wager?\n";
-            cin >> choice;
-                if (choice == 'd' | choice == 'h' | choice == 'k'){
-                    correctChoice = true;
-                }
-                else{
-                    cout << "Invalid input. Enter, d, h, or k! \n";
-                }    
+        cout << "You roll a " << playerRoll << "! Do you want to Keep, Halve, or Double your bet (1, 2, 3)? ";
+        cin >> input;
+        while (input != 1 && input != 2 && input != 3)
+        {
+            cout << "Invalid input!" << endl;
+            cout << "Do you want to Keep, Halve, or Double your bet (1, 2, 3)? ";
+            cin >> input;
         }
 
-        bool win;
-        //doubles bet and checks who wins if user choses double
-        if (choice == 'd'){
-            bet *= 2;
-            cout << "First house spin: " << houseSpin1 << endl;
-            cout << "Second house spin: " << houseSpin2 << endl;
-            if (userSpin > houseSpin1 && userSpin > houseSpin2){
-                win = true;
-                user.setMoney(bet);
+        switch (input)
+        {
+        case 1: // Keep, so house roll once
+            int houseRoll = house.Spin();
+            cout << "House roll a " << houseRoll << "! ";
+            if (houseRoll < playerRoll) 
+            {
+                cout << "You win " << betAmount << "$" << endl;
+                p.win(betAmount);
             }
-            else{
-                win = false;
-                user.setMoney(-bet);
+            else 
+            {
+                cout << "You lose " << betAmount << "$" << endl;
+                p.lose(betAmount);
             }
-        }
-        // halves bet and checks who wins if user choses half
-        else if (choice == 'h'){
-            bet /= 2;
-            cout << "First house spin: " << houseSpin1 << endl;
-            cout << "Second house spin: " << houseSpin2 << endl;
-            if (userSpin > houseSpin1 | userSpin > houseSpin2){
-                win = true;
-                user.setMoney(bet);
-            }
-            else{
-                win = false;
-                user.setMoney(-bet);
-            }
-        }
-        //checks who wins if no change to wager 
-        else {
-            cout << "House spin: " << houseSpin1 << endl;
-            if (userSpin > houseSpin1){
-                win = true;
-                user.setMoney(bet);
-            }
-            else{
-                win = false;
-                user.setMoney(-bet);
-            }
-        }
+            break;
+
+        case 2: // Halve, so house roll twice, player hold money if house doesn't win both
+            int houseRoll1 = house.Spin();
+            int houseRoll2 = house.Spin();
+            cout << "House roll a " << houseRoll1 << " and " << houseRoll2 << "! ";
+
+        case 3: // Double, player lose double if house win one, but win double if player win both
         
-        if (win){
-            cout << "Player wins! Current money: $" << user.getMoney() << endl;
-        }
-        else{
-            cout << "House wins! Current money: $" << user.getMoney() << endl;
-        }
-
-        //if the user ran out of money, loop terminates
-        if (user.getMoney() <= 0){
-            cout << "You ran out of money.\n";
-            cout << "******************** Game Over *********************\n";
+        default:
             break;
         }
 
-        //checks if the user wants to continue the game or cash out
-        char continueGame;
-        cout << "Do you want to continue playing? (y/n)";
-        cin >> continueGame;
-        if (continueGame != 'y' && continueGame != 'Y'){
-            cout << "You cashed out with $" << user.getMoney() <<".\n";
-            break;
-        }
-        else{
-            cout << "******************** Next Round *********************\n";
-        }
+        
+        cout << "Do you want to cash out (type 0 to cash out, type anything to continue)? ";
+        cin >> inText;
+        if (inText == "0") isPlaying = false;
     }
-}
 
+    return 0;
+}
